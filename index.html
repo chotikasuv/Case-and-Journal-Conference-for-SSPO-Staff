@@ -164,10 +164,10 @@ footer{font-size:.82rem;color:var(--muted)}
         </div>
         <div class="status" id="svStatus"><span class="dot"></span><span id="svText">Open · closes Mon 12 Oct, 12:00 PM</span></div>
         <div class="tally">
-          <div class="yes"><b>17</b><small>attending</small></div>
-          <div class="no"><b>3</b><small>can't attend</small></div>
+          <div class="yes"><b id="nYes">18</b><small>attending</small></div>
+          <div class="no"><b id="nNo">3</b><small>can't attend</small></div>
         </div>
-        <p class="note" style="margin:0">Snapshot from the survey sheet on 9 Oct 2026. Open the sheet for live responses and tick Attend or Not attend next to your name.</p>
+        <p class="note" id="svNote" style="margin:0">Counting responses from the survey sheet… Tick Attend or Not attend next to your name in the sheet.</p>
         <a class="btn" href="https://docs.google.com/spreadsheets/d/1Y2iYK1NMFWQBekZNMlczBGy7vn7Mj3wiJfVKtOGD6n8/edit?gid=280551052#gid=280551052" target="_blank" rel="noopener">Open survey sheet ↗</a>
       </div>
     </div>
@@ -247,5 +247,43 @@ footer{font-size:.82rem;color:var(--muted)}
 })();
 </script>
 
+
+<script>
+(function(){
+  var CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vR-QTz0pAUgME3lx4GCHR03ZgzuzWkJFmLo2bPD-vfKHRmXqVCPzid1gvkVnPDiNVSYeWBGpRFnCjJq/pub?gid=280551052&single=true&output=csv';
+  var note=document.getElementById('svNote');
+  function parse(t){
+    var rows=[],row=[],f='',q=false;
+    for(var i=0;i<t.length;i++){
+      var c=t[i];
+      if(q){ if(c=='"'){ if(t[i+1]=='"'){f+='"';i++;} else q=false; } else f+=c; }
+      else if(c=='"') q=true;
+      else if(c==','){row.push(f);f='';}
+      else if(c=='\n'||c=='\r'){ if(c=='\r'&&t[i+1]=='\n')i++; row.push(f);rows.push(row);row=[];f=''; }
+      else f+=c;
+    }
+    if(f||row.length){row.push(f);rows.push(row);}
+    return rows;
+  }
+  function load(){
+    fetch(CSV+'&t='+Date.now(),{cache:'no-store'}).then(function(r){
+      if(!r.ok) throw new Error(r.status); return r.text();
+    }).then(function(t){
+      var yes=0,no=0;
+      parse(t).forEach(function(r){
+        if((r[2]||'').trim().toUpperCase()==='TRUE') yes++;
+        if((r[3]||'').trim().toUpperCase()==='TRUE') no++;
+      });
+      document.getElementById('nYes').textContent=yes;
+      document.getElementById('nNo').textContent=no;
+      var tm=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Bangkok'});
+      note.textContent='Live from the survey sheet, checked at '+tm+'. Google can take a few minutes to show new ticks. Tick Attend or Not attend next to your name in the sheet.';
+    }).catch(function(){
+      note.textContent='Couldn’t load live numbers right now, so these are from 9 Oct. Open the sheet to see current responses.';
+    });
+  }
+  load(); setInterval(load,300000);
+})();
+</script>
 </body>
 </html>
