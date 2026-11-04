@@ -572,10 +572,17 @@ table.att tr:last-child td{border-bottom:0}
     fetch(CSV+'&t='+Date.now(),{cache:'no-store'}).then(function(r){
       if(!r.ok) throw new Error(r.status); return r.text();
     }).then(function(t){
-      var yes=0,no=0;
-      parse(t).forEach(function(r){
-        if((r[2]||'').trim().toUpperCase()==='TRUE') yes++;
-        if((r[3]||'').trim().toUpperCase()==='TRUE') no++;
+      var yes=0,no=0,rows=parse(t),cY=2,cN=-1;
+      /* find the Attend / Not attend columns by their header names, so added columns (e.g. Snack) don't shift the counts */
+      for(var h=0;h<rows.length;h++){
+        var hdr=rows[h].map(function(c){return (c||'').trim().toLowerCase()});
+        var iN=hdr.indexOf('not attend'), iY=hdr.indexOf('attend');
+        if(iN>=0&&iY>=0){cY=iY;cN=iN;break;}
+      }
+      if(cN<0) cN=3;
+      rows.forEach(function(r){
+        if((r[cY]||'').trim().toUpperCase()==='TRUE') yes++;
+        if((r[cN]||'').trim().toUpperCase()==='TRUE') no++;
       });
       document.getElementById('nYes').textContent=yes;
       document.getElementById('nNo').textContent=no;
