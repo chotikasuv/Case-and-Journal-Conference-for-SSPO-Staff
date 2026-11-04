@@ -280,6 +280,27 @@ table.att tr:last-child td{border-bottom:0}
 .tl .yt{display:inline-flex;align-items:center;gap:8px;justify-self:start;margin-top:6px;font-weight:600;font-size:.9rem;color:var(--ink);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px;background:var(--bg)}
 .tl .yt:hover{border-color:#e62117}
 .sp-contact .mail{font-weight:600;color:var(--navy);user-select:all;overflow-wrap:anywhere}
+
+/* ---- Satisfaction ---- */
+.sat-cta{display:flex;flex-wrap:wrap;gap:14px 20px;align-items:center;justify-content:space-between;background:var(--violet-soft);border-radius:16px;padding:18px 20px}
+.sat-cta b{color:var(--navy);font-size:1.1rem}
+.sat-cta p{margin:2px 0 0;color:var(--ink);max-width:56ch}
+.sat-btns{display:flex;flex-wrap:wrap;gap:10px}
+.sat-stats{grid-template-columns:repeat(3,minmax(0,1fr))!important;margin:0}
+.sat-stats small{display:block;color:var(--muted);font-size:.8rem;margin-top:2px}
+@media (max-width:560px){.sat-stats{grid-template-columns:1fr!important}}
+.sat-legend{display:flex;gap:14px;font-size:.85rem;color:var(--muted)}
+.sat-legend i{display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.sat-chartwrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 8px 4px}
+#satChart{display:block;min-width:760px;width:100%;height:auto}
+#satChart text{fill:var(--muted);font-family:var(--body);font-size:11px}
+#satChart .grid{stroke:var(--line);stroke-width:1}
+#satChart .season{stroke:var(--line);stroke-dasharray:3 4}
+#satChart .sl{fill:var(--navy);font-weight:600;font-size:11px}
+.sat-table td:nth-child(2){white-space:normal;min-width:220px;max-width:420px;text-align:left}
+.sat-table th:nth-child(2){text-align:left}
+.score{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-variant-numeric:tabular-nums}
+.score i{display:inline-block;height:6px;border-radius:3px;background:var(--c);width:calc(var(--w) * 1px)}
 </style>
 <style>html{color-scheme:light}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:16px}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
@@ -467,15 +488,29 @@ table.att tr:last-child td{border-bottom:0}
   </div>
 
   <div class="page" data-page="satisfaction" hidden>
-    <section aria-labelledby="sat-h">
+    <section class="tm-h" aria-labelledby="sat-h">
       <div class="eyebrow">Sub-page · feedback</div>
-      <h2 id="sat-h">Satisfaction score by month</h2>
-      <p class="lede">Average score from the AA-F-05 satisfaction survey for each session.</p>
+      <h2 id="sat-h">Satisfaction</h2>
+      <p>Average scores out of 5 from the AA-F-05 satisfaction survey, for every session since October 2023.</p>
     </section>
-    <section class="sat-empty">
-      <h3>No monthly scores added yet</h3>
-      <p class="note" style="margin:0">Scores appear here once each month's survey results are added. Each month will show the average score (out of 5), the number of responses and the change from the previous month.</p>
-      <div class="months" id="satMonths"></div>
+    <section class="sat-cta">
+      <div><b>Attended a session?</b><p>Rate the talk and the organization. It takes about a minute, and comments go to the speaker.</p></div>
+      <div class="sat-btns">
+        <a class="btn" href="https://docs.google.com/forms/d/10nRHXMeNqDDusJrshwQswDKEHJKjGuPqlOheJ8cz-M0/viewform" target="_blank" rel="noopener">Rate a session ↗</a>
+      </div>
+    </section>
+    <section>
+      <div class="rec-stats sat-stats" id="satStats"></div>
+    </section>
+    <section aria-labelledby="satc-h">
+      <div class="sec-head"><h3 id="satc-h" class="sp-sub" style="margin:0">Score by session</h3>
+        <div class="sat-legend"><span><i style="background:var(--violet)"></i>Presentation</span><span><i style="background:var(--orange)"></i>Organization</span></div></div>
+      <div class="sat-chartwrap"><svg id="satChart" role="img" aria-label="Line chart of average presentation and organization scores for each session since October 2023"></svg></div>
+    </section>
+    <section aria-labelledby="satt-h">
+      <div class="toolbar"><h3 id="satt-h" class="sp-sub" style="margin:0 auto 0 0">All sessions</h3><div class="seg" id="satSeason" role="group" aria-label="Choose a year"></div></div>
+      <div class="tablewrap"><table class="att sat-table"><thead><tr><th>Date</th><th>Topic</th><th>Presentation</th><th>Organization</th><th>Responses</th></tr></thead><tbody id="satRows"></tbody></table></div>
+      <p class="foot">Presentation: “How much do you like the presentation and activity today?” Organization: “How was the case and journal management today?” Averages are calculated from every response, matched to the session held on or just before the response date.</p>
     </section>
   </div>
 
@@ -856,12 +891,50 @@ table.att tr:last-child td{border-bottom:0}
   })();
 
   /* ---------- satisfaction ---------- */
-  var SEASON=['Oct 2026','Nov 2026','Dec 2026','Jan 2027','Feb 2027','May 2027','Jun 2027','Jul 2027','Aug 2027','Sep 2027'];
-  var SAT={}; /* e.g. 'Oct 2026': {avg:4.6, n:21} */
-  document.getElementById('satMonths').innerHTML=SEASON.map(function(m){
-    var s=SAT[m];
-    return '<div class="mcell"><small>'+m+'</small><b>'+(s?s.avg.toFixed(2):'—')+'</b><small>'+(s?s.n+' responses':'no data yet')+'</small></div>';
-  }).join('');
+  (function(){
+    var SD=[{"d": "2023-10-11", "p": 4.07, "m": 4.2, "n": 30}, {"d": "2023-11-08", "p": 4.18, "m": 4.15, "n": 33}, {"d": "2023-12-13", "p": 4.0, "m": 4.06, "n": 16}, {"d": "2024-02-14", "p": 4.41, "m": 4.44, "n": 63}, {"d": "2024-03-13", "p": 4.39, "m": 4.42, "n": 33}, {"d": "2024-04-10", "p": 4.45, "m": 4.55, "n": 38}, {"d": "2024-05-08", "p": 4.7, "m": 4.7, "n": 10}, {"d": "2024-06-12", "p": 4.53, "m": 4.65, "n": 34}, {"d": "2024-07-10", "p": 4.4, "m": 4.7, "n": 10}, {"d": "2024-08-14", "p": 4.54, "m": 4.58, "n": 24}, {"d": "2024-09-11", "p": 4.5, "m": 4.67, "n": 6}, {"d": "2024-11-13", "p": 4.52, "m": 4.5, "n": 50}, {"d": "2025-01-08", "p": 4.38, "m": 4.34, "n": 32}, {"d": "2025-03-12", "p": 4.5, "m": 4.64, "n": 14}, {"d": "2025-04-09", "p": 4.32, "m": 4.47, "n": 34}, {"d": "2025-06-11", "p": 4.83, "m": 4.83, "n": 6}, {"d": "2025-08-13", "p": 4.75, "m": 4.75, "n": 8}, {"d": "2025-11-12", "p": 4.68, "m": 4.74, "n": 76}, {"d": "2026-01-14", "p": 4.62, "m": 4.76, "n": 58}, {"d": "2026-02-11", "p": 4.68, "m": 4.68, "n": 77}, {"d": "2026-03-11", "p": 4.52, "m": 4.48, "n": 63}, {"d": "2026-04-08", "p": 4.59, "m": 4.63, "n": 49}, {"d": "2026-06-10", "p": 4.65, "m": 4.68, "n": 62}, {"d": "2026-07-08", "p": 4.56, "m": 4.63, "n": 57}, {"d": "2026-09-09", "p": 4.45, "m": 4.59, "n": 22}, {"d": "2026-10-14", "p": 4.63, "m": 4.63, "n": 46}];
+    var M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var TOPIC={}; R.forEach(function(Y){Y.items.forEach(function(i){TOPIC[i.d]=i.talks?i.talks.map(function(t){return t.title}).join(' · '):i.title})});
+    function season(d){var y=+d.slice(0,4),m=+d.slice(5,7);var s=m>=10?y:y-1;return s+'–'+String(s+1).slice(2)}
+    function lab(d){return M[+d.slice(5,7)-1]+' '+d.slice(2,4)}
+    var last=SD[SD.length-1], cur=season(last.d);
+    var curS=SD.filter(function(x){return season(x.d)===cur});
+    var wavg=function(a,k){var n=0,t=0;a.forEach(function(x){t+=x[k]*x.n;n+=x.n});return t/n};
+    var total=SD.reduce(function(n,x){return n+x.n},0);
+    document.getElementById('satStats').innerHTML=
+      '<div><b>'+last.p.toFixed(2)+'</b><span>latest session, '+(+last.d.slice(8))+' '+M[+last.d.slice(5,7)-1]+' '+last.d.slice(0,4)+'</span><small>Organization '+last.m.toFixed(2)+' · '+last.n+' responses</small></div>'+
+      '<div><b>'+wavg(curS,'p').toFixed(2)+'</b><span>average this year ('+cur+')</span><small>Organization '+wavg(curS,'m').toFixed(2)+'</small></div>'+
+      '<div><b>'+total.toLocaleString('en')+'</b><span>responses since Oct 2023</span><small>'+SD.length+' sessions rated</small></div>';
+    /* chart */
+    var W=Math.max(760,SD.length*34+70),H=260,L=40,Rr=14,T=26,Bm=40,lo=3.5,hi=5;
+    var x=function(i){return L+(W-L-Rr)*(i/(SD.length-1))}, y=function(v){return T+(H-T-Bm)*(1-(v-lo)/(hi-lo))};
+    var g='';
+    [3.5,4,4.5,5].forEach(function(v){g+='<line class="grid" x1="'+L+'" x2="'+(W-Rr)+'" y1="'+y(v)+'" y2="'+y(v)+'"/><text x="'+(L-8)+'" y="'+(y(v)+4)+'" text-anchor="end">'+v.toFixed(1)+'</text>'});
+    var prev=null;
+    SD.forEach(function(s,i){var se=season(s.d); if(se!==prev){ if(i) g+='<line class="season" x1="'+(x(i)-17)+'" x2="'+(x(i)-17)+'" y1="'+(T-14)+'" y2="'+(H-Bm)+'"/>'; g+=(i===SD.length-1?'<text class="sl" x="'+(W-Rr)+'" text-anchor="end"':'<text class="sl" x="'+(i?x(i)-11:L)+'"')+' y="'+(T-12)+'">'+se+'</text>'; prev=se;}
+      g+='<text x="'+x(i)+'" y="'+(H-Bm+18)+'" text-anchor="middle">'+M[+s.d.slice(5,7)-1]+'</text>';});
+    function line(k,c){var p=SD.map(function(s,i){return (i?'L':'M')+x(i).toFixed(1)+' '+y(s[k]).toFixed(1)}).join('');
+      var d='<path d="'+p+'" fill="none" stroke="'+c+'" stroke-width="2.5" stroke-linejoin="round"/>';
+      SD.forEach(function(s,i){d+='<circle cx="'+x(i)+'" cy="'+y(s[k])+'" r="'+(i===SD.length-1?5:3.5)+'" fill="'+c+'" stroke="var(--surface)" stroke-width="1.5"><title>'+lab(s.d)+': '+(k==='p'?'Presentation ':'Organization ')+s[k].toFixed(2)+' ('+s.n+' responses)</title></circle>'});
+      return d}
+    g+=line('m','var(--orange)')+line('p','var(--violet)');
+    g+='<text x="'+x(SD.length-1)+'" y="'+(y(last.p)-10)+'" text-anchor="end" style="fill:var(--violet);font-weight:700">'+last.p.toFixed(2)+'</text>';
+    var svg=document.getElementById('satChart'); svg.setAttribute('viewBox','0 0 '+W+' '+H); svg.innerHTML=g;
+    /* table */
+    var seasons=[];SD.forEach(function(s){var se=season(s.d);if(seasons.indexOf(se)<0)seasons.push(se)});seasons.reverse();
+    var pick='All';
+    var seg=document.getElementById('satSeason');
+    seg.innerHTML=['All'].concat(seasons).map(function(s){return '<button type="button" data-s="'+s+'" aria-pressed="'+(s===pick)+'">'+s+'</button>'}).join('');
+    seg.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;pick=b.getAttribute('data-s');seg.querySelectorAll('button').forEach(function(z){z.setAttribute('aria-pressed',z===b)});rows()});
+    function cell(v,c){return '<span class="score" style="--c:'+c+';--w:'+Math.round((v-3)*30)+'">'+v.toFixed(2)+'<i></i></span>'}
+    function rows(){
+      document.getElementById('satRows').innerHTML=SD.slice().reverse().filter(function(s){return pick==='All'||season(s.d)===pick}).map(function(s){
+        var p=s.d.split('-');
+        return '<tr><td>'+(+p[2])+' '+M[+p[1]-1]+' '+p[0]+'</td><td>'+esc(TOPIC[s.d]||'Session in '+p[0])+'</td><td>'+cell(s.p,'var(--violet)')+'</td><td>'+cell(s.m,'var(--orange)')+'</td><td>'+s.n+'</td></tr>';
+      }).join('');
+    }
+    rows();
+  })();
 
   /* ---------- attendance ---------- */
   var season='2425';
